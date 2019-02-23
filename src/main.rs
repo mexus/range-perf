@@ -42,8 +42,8 @@ fn get_low_and_up(up: u64) -> impl FnMut() -> (u64, u64) {
 }
 
 /// Creates a bencher that benches a non-inslucive range.
-fn make_non_inclusive() -> Fun<u64> {
-    Fun::new("non-inclusive", |b, &up| {
+fn make_non_inclusive(up: u64) -> Fun<()> {
+    Fun::new(&format!("non-inclusive {}", up), move |b, &()| {
         b.iter_batched(
             get_low_and_up(up),
             |(low, up)| calc(black_box(low..up)),
@@ -53,8 +53,8 @@ fn make_non_inclusive() -> Fun<u64> {
 }
 
 /// Creates a bencher that benches an inslucive range.
-fn make_inclusive() -> Fun<u64> {
-    Fun::new("inclusive", |b, &up| {
+fn make_inclusive(up: u64) -> Fun<()> {
+    Fun::new(&format!("inclusive {}", up), move |b, &()| {
         b.iter_batched(
             get_low_and_up(up),
             |(low, up)| calc(black_box(low..=up)),
@@ -64,8 +64,8 @@ fn make_inclusive() -> Fun<u64> {
 }
 
 /// Creates a bencher that benches DynamicInclusiveRange.
-fn make_dynamic() -> Fun<u64> {
-    Fun::new("dynamic", |b, &up| {
+fn make_dynamic(up: u64) -> Fun<()> {
+    Fun::new(&format!("dynamic {}", up), move |b, &()| {
         b.iter_batched(
             get_low_and_up(up),
             |(low, up)| calc(black_box(DynamicInclusiveRange::new(low, up))),
@@ -75,17 +75,17 @@ fn make_dynamic() -> Fun<u64> {
 }
 
 fn ranges(c: &mut Criterion) {
-    // Bench with some "random" upper bound which is clearly lower than `u64::max_value()`.
     c.bench_functions(
-        "ranges-non-max",
-        vec![make_non_inclusive(), make_inclusive(), make_dynamic()],
-        10454235000005000u64,
-    );
-    // Bench with `u64::max_value()` as the upper bound.
-    c.bench_functions(
-        "ranges-max",
-        vec![make_non_inclusive(), make_inclusive(), make_dynamic()],
-        u64::max_value(),
+        "ranges",
+        vec![
+            make_non_inclusive(u64::max_value() - 1),
+            make_inclusive(u64::max_value() - 1),
+            make_dynamic(u64::max_value() - 1),
+            make_non_inclusive(u64::max_value()),
+            make_inclusive(u64::max_value()),
+            make_dynamic(u64::max_value()),
+        ],
+        (),
     );
 }
 
